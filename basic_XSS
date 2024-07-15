@@ -1,0 +1,1 @@
+<script>alert(“here is stored XSS”);</script>

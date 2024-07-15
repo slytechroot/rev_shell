@@ -1,3 +1,5 @@
+Persistent (Stored) XSS
+
 <?php
 if(isset($_POST['btnSign']))
 {

